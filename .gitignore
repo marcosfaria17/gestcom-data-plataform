@@ -1,0 +1,5 @@
+.env
+data/input/*
+data/processed/*
+data/errors/*
+nifi/drivers/*.jar
