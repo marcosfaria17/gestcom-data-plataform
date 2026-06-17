@@ -1,0 +1,85 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: gestcom_postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d
+    networks:
+      - gestcom_network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: gestcom_pgadmin
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "${PGADMIN_PORT}:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - gestcom_network
+
+  minio:
+    image: minio/minio:latest
+    container_name: gestcom_minio
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${MINIO_API_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - gestcom_network
+
+  nifi:
+    image: apache/nifi:latest
+    container_name: gestcom_nifi
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SINGLE_USER_CREDENTIALS_USERNAME: ${SINGLE_USER_CREDENTIALS_USERNAME}
+      SINGLE_USER_CREDENTIALS_PASSWORD: ${SINGLE_USER_CREDENTIALS_PASSWORD}
+      NIFI_WEB_HTTPS_PORT: ${NIFI_WEB_HTTPS_PORT}
+    ports:
+      - "${NIFI_PORT}:8443"
+    volumes:
+      - ./data:/opt/nifi/nifi-current/data
+      - ./nifi/templates:/opt/nifi/nifi-current/templates
+      - ./nifi/drivers/postgresql.jar:/opt/nifi/nifi-current/lib/postgresql.jar
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - gestcom_network
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  minio_data:
+
+networks:
+  gestcom_network:
+    driver: bridge

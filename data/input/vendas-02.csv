@@ -1,0 +1,4 @@
+data_venda;cliente;produto;quantidade;valor_unitario
+2026-06-18;Cliente D;Produto AA;2;49.91
+2026-06-18;Cliente E;Produto AB;1;120.01
+2026-06-18;Cliente F;Produto AC;3;35.51
